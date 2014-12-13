@@ -1,0 +1,50 @@
+#compdef ember
+
+# ZSH completion for ember-cli http://www.ember-cli.com/
+# Author: Johan Bloemberg (mail@ijohan.nl)
+# Based on: https://gist.github.com/WMeldon/19e822d30a57f48c36cd Will Meldon (wdmeldon@gmail.com)
+
+# selected list of command when not inside project directory
+_ember_non_project_command_list () {
+  compadd help init new update version
+}
+
+# full command list when inside project directory
+_ember_get_command_list () {
+  compadd $(ember | sed "1,/Available commands/d" | awk '/^ember [a-z]+/ { print $2 }')
+}
+
+# list of blueprint for generate command
+_ember_get_blueprint_list () {
+  compadd $(ember generate -h | sed "1,/Available blueprints/d" | awk '/^ +[a-z-]+ </ { print $1 }')
+}
+
+_ember () {
+  local curcontext="$curcontext" state line
+  typeset -A opt_args
+
+  _arguments -C \
+    '1: :->command' \
+    '2: :->subcommand'
+
+  case $state in
+    (command)
+      if [ -f .ember-cli ]; then
+        _ember_get_command_list
+      else
+        _ember_non_project_command_list
+      fi
+    ;;
+    (subcommand)
+      curcontext="${curcontext%:*:*}:ember-subcmd-$words[1]:"
+
+      case $words[2] in
+        (generate)
+          _ember_get_blueprint_list
+        ;;
+      esac
+    ;;
+  esac
+}
+
+_ember "$@"
